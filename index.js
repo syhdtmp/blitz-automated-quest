@@ -26,7 +26,7 @@ async function processTokens() {
   processState.attempt++
   const currentTime = new Date().toLocaleString();
   console.log(
-    `============================Attempt-${process.attempt}============================`,
+    `============================Attempt-${processState.attempt}============================`,
   );
   console.log(
     `[Scheduled Task] [${currentTime}] Executing code every six hours...`,
