@@ -1,11 +1,12 @@
 import axios from "axios";
+import { persistentState, platformState, userState } from "../state/index.js";
 
-export async function getAllCompletedQuests(accessToken) {
+export async function getAllCompletedQuests() {
   try {
     const response = await axios.post(
-      "https://api-saakuru-gainz.beyondblitz.app/blitz/quest/get-user-quest-statistic",
-      { questId: "quest_1" },
-      { headers: { Authorization: "Bearer " + accessToken } },
+      `${persistentState.baseUrl}/quest/get-user-quest-statistic`,
+      { questId: platformState.questId },
+      { headers: { Authorization: "Bearer " + userState.token } },
     );
     const responseData = response.data;
     if (responseData.code != 0) {
@@ -20,13 +21,20 @@ export async function getAllCompletedQuests(accessToken) {
   }
 }
 
-export async function getCurrentQuests(accessToken) {
+export async function getCurrentQuests() {
   try {
     const response = await axios.post(
-      "https://api-saakuru-gainz.beyondblitz.app/blitz/quest/current-quest",
+      `${persistentState.baseUrl}/quest/current-quest`,
       { withQuestTask: true, withStatistic: true },
-      { headers: { Authorization: "Bearer " + accessToken } },
+      { headers: { Authorization: "Bearer " + userState.token } },
     );
+
+    const responseData = response.data
+    if (responseData.code != 0) {
+      throw new Error("Error request with code " + responseData.code)
+    }
+
+    platformState.questId = responseData.data.id
 
     const quests = response.data.data.tasks.map((quest) => ({
       id: quest.id,

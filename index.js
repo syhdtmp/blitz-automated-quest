@@ -2,12 +2,9 @@ import axios from "axios";
 import { refreshAuthToken } from "./func/refreshToken.js";
 import { getProfile } from "./func/getProfile.js";
 import { completeAllQuests } from "./func/clearQuest.js";
+import { persistentState, processState, userState } from './state/index.js'
 import fs from "fs";
 import readline from "readline";
-
-const filePath = "token.txt";
-
-let attempt = 0;
 
 async function readTextFile(filePath) {
   const lines = [];
@@ -26,10 +23,10 @@ async function readTextFile(filePath) {
 }
 
 async function processTokens() {
-  attempt++;
+  processState.attempt++
   const currentTime = new Date().toLocaleString();
   console.log(
-    `============================Attempt-${attempt}============================`,
+    `============================Attempt-${process.attempt}============================`,
   );
   console.log(
     `[Scheduled Task] [${currentTime}] Executing code every six hours...`,
@@ -38,7 +35,7 @@ async function processTokens() {
     "=================================================================",
   );
 
-  const refreshTokens = await readTextFile(filePath);
+  const refreshTokens = await readTextFile(persistentState.readFile);
   if (refreshTokens.length == 0) {
     console.log(
       "Please provide refresh tokens in token.txt file (each new line equal to new identity)",
@@ -50,28 +47,30 @@ async function processTokens() {
 
   for (const [index, refreshToken] of refreshTokens.entries()) {
     const token = await refreshAuthToken(refreshToken);
+    userState.token = token
     const profile = await getProfile(token);
-    console.log("[-] Twitter Name : " + profile.name);
-    console.log("[-] Twitter Handle : " + profile.twitterHandle);
-    await applyReferalCode(token, "U4OKLYBW");
+    userState.name = profile.name
+    userState.twitterHandle = profile.twitterHandle
 
-    await completeAllQuests(token);
+    await applyReferalCode();
+
+    await completeAllQuests();
   }
 }
 
-async function applyReferalCode(token, referralCode) {
+async function applyReferalCode() {
   try {
     const response = await axios.post(
-      "https://api-saakuru-gainz.beyondblitz.app/blitz/user/apply-referral-code",
-      { referralCode },
-      { headers: { Authorization: "Bearer " + token } },
+      `${persistentState.baseUrl}/user/apply-referral-code`,
+      { referralCode: persistentState.referralCode },
+      { headers: { Authorization: "Bearer " + userState.token } },
     );
     const responseData = response.data;
     if (responseData.code != 0) {
-      console.log(`[-] Applying referal code : ${responseData.message}`);
+      console.log(`[-][${userState.twitterHandle}] Applying referal code : ${responseData.message}`);
       return;
     }
-    console.log(`[-] Applying referal code : success`);
+    console.log(`[-][${userState.twitterHandle}] Applying referal code : success`);
   } catch (error) {
     console.log("Error applying referal code : " + error.message);
   }

@@ -1,13 +1,14 @@
 import axios from "axios";
+import { persistentState, userState } from "../state/index.js";
 
-export async function getProfile(accessToken) {
+export async function getProfile() {
   try {
     const url =
-      "https://api-saakuru-gainz.beyondblitz.app/blitz/user/current-profile";
+      `${persistentState.baseUrl}/user/current-profile`;
     const response = await axios.post(
       url,
       {},
-      { headers: { Authorization: "Bearer " + accessToken } },
+      { headers: { Authorization: "Bearer " + userState.token } },
     );
     const responseData = response.data;
     if (responseData.code != 0) {

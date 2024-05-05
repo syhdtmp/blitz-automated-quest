@@ -1,10 +1,11 @@
 import axios from "axios";
+import { persistentState } from "../state/index.js";
 
 export async function refreshAuthToken(refreshToken) {
-  const requestData = { refreshToken: refreshToken };
+  const requestData = { refreshToken };
   try {
     const url =
-      "https://api-saakuru-gainz.beyondblitz.app/blitz/auth/refresh-token";
+      `${persistentState.baseUrl}/auth/refresh-token`;
     const response = await axios.post(url, requestData);
     const responseData = response.data;
     if (responseData.code != 0) {

@@ -1,10 +1,13 @@
 import axios from "axios";
 import { getAllCompletedQuests, getCurrentQuests } from "./getQuest.js";
+import { persistentState, platformState, userState } from "../state/index.js";
 
-export async function completeAllQuests(accessToken) {
+export async function completeAllQuests() {
   try {
-    const currentQuests = await getCurrentQuests(accessToken);
-    const completedQuests = (await getAllCompletedQuests(accessToken)).map(
+    platformState.claimedQuest = 0
+    platformState.unclaimableQuest = 0
+    const currentQuests = await getCurrentQuests();
+    const completedQuests = (await getAllCompletedQuests()).map(
       (quest) => quest.questTaskId,
     );
 
@@ -13,38 +16,64 @@ export async function completeAllQuests(accessToken) {
     });
 
     let nonFollowTask = [];
-    let newCompletedQuests = 0;
     for (const quest of incompleteQuests) {
       if (quest.category === "follow_twitter") {
-        await claimQuestFollow(quest.id, accessToken);
-        newCompletedQuests++;
+        await claimQuestFollow(quest.id);
       } else {
+        await claimQuest(quest.id);
         nonFollowTask.push(quest.category + " - " + quest.name);
       }
     }
+    console.log(`[-][${userState.twitterHandle}] Past completed quests : ${completedQuests.length}`);
+    console.log(`[-][${userState.twitterHandle}] New completed quests : ${platformState.claimedQuest}`);
     console.log(
-      `[-] Detected ${nonFollowTask.length} non follow tasks : \n + ${nonFollowTask.join("\n + ")}`,
+      `[-][${userState.twitterHandle}] Detected ${platformState.unclaimableQuest} unclaimable tasks : \n + ${nonFollowTask.join("\n + ")}`,
     );
-    console.log(`[-] New completed quests : ${newCompletedQuests}`);
   } catch (error) {
     console.log(error);
   }
 }
 
-export async function claimQuestFollow(questId, accessToken) {
+export async function claimQuestFollow(taskId) {
   try {
     const response = await axios.post(
-      "https://api-saakuru-gainz.beyondblitz.app/blitz/quest/claim-task-follow-twitter",
+      `${persistentState.baseUrl}/quest/claim-task-follow-twitter`,
       {
-        questId: "quest_1",
-        taskId: questId,
+        questId: platformState.questId,
+        taskId
       },
       {
-        headers: { Authorization: "Bearer " + accessToken },
+        headers: { Authorization: "Bearer " + userState.token },
       },
     );
-    console.log(`[+] Added ${response.data.data.totalPoints} point`);
+    console.log(`[-][${userState.twitterHandle}] Added ${response.data.data.totalPoints} point`);
+    platformState.claimedQuest++
   } catch (error) {
     console.log("Unable to claim follow quest : " + error.message);
+  }
+}
+
+export async function claimQuest(taskId) {
+  try {
+    const response = await axios.post(
+      `${persistentState.baseUrl}/quest/claim-quest-task`,
+      {
+        questId: platformState.questId,
+        taskId: [taskId]
+      },
+      {
+        headers: { Authorization: "Bearer " + userState.token },
+      },
+    );
+    const responseData = response.data
+    if (responseData.code != 0) {
+      console.log(`[-][${userState.twitterHandle}] Skipping unclaimable quests`)
+    platformState.unclaimableQuest++
+      return
+    }
+    console.log(`[-][${userState.twitterHandle}] Added ${responseData.data.totalPoints} point`);
+    platformState.claimedQuest++
+  } catch (error) {
+    console.log("Unable to claim quest : " + error.message);
   }
 }
