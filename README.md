@@ -2,7 +2,7 @@
 
 ## How to use
 
-- Go to [Saakuru dashboard](https://gainz.saakuru.com/dashboard)
+- Go to [Beyond blitz dashboard](https://beyondblitz.app/dashboard)
 - Open console using Ctrl + Shift + I
 - Get the refresh token using this code
 
