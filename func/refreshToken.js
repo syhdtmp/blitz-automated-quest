@@ -9,7 +9,7 @@ export async function refreshAuthToken(refreshToken) {
     const response = await axios.post(url, requestData);
     const responseData = response.data;
     if (responseData.code != 0) {
-      throw new Error("Error request with status code " + responseData.code);
+      throw new Error("Error request " + responseData.message);
     }
     const token = responseData.data.token;
     return token;

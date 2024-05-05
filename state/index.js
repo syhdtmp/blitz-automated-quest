@@ -1,6 +1,6 @@
 export const persistentState = {
-  referralCode: "U4OKLYBW",
-  baseUrl: 'https://api-saakuru-gainz.beyondblitz.app/blitz',
+  referralCode: "U31QUAKN",
+  baseUrl: 'https://api.beyondblitz.app/blitz',
   readFile: 'token.txt'
 }
 
@@ -11,7 +11,8 @@ export let processState = {
 export let platformState = {
   questId: '',
   unclaimableQuest: 0,
-  claimedQuest: 0
+  claimedQuest: 0,
+  claimedPoints: 0
 }
 
 export let userState = {
