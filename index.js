@@ -56,6 +56,15 @@ async function processTokens() {
 
     await completeAllQuests();
   }
+  console.log(
+    `============================End Attempt-${processState.attempt}============================`,
+  );
+  console.log(
+    `[Scheduled Task] [${currentTime}] Waiting for another six hours...`,
+  );
+  console.log(
+    "=================================================================",
+  );
 }
 
 async function applyReferalCode() {
