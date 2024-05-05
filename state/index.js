@@ -10,8 +10,8 @@ export let processState = {
 
 export let platformState = {
   questId: '',
-  unclaimableQuest: 0,
-  claimedQuest: 0,
+  unclaimableQuest: [],
+  claimedQuest: [],
   claimedPoints: 0
 }
 
