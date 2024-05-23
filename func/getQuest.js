@@ -1,49 +1,47 @@
-import axios from "axios";
 import { persistentState, platformState, userState } from "../state/index.js";
+import { logRequestTime } from './fetch.js';
+import { prettyLog } from './log.js'; // Import prettyLog for logging
+
+async function fetchFromApi(endpoint, data, headers) {
+  const url = `${persistentState.baseUrl}${endpoint}`;
+  const response = await logRequestTime(url, 'POST', data, headers);
+  const responseData = response.data;
+  if (responseData.code !== 0) {
+    throw new Error(`Error request with code ${responseData.code}`);
+  }
+  return responseData;
+}
 
 export async function getAllCompletedQuests() {
   try {
-    const response = await axios.post(
-      `${persistentState.baseUrl}/quest/get-user-quest-statistic`,
+    const responseData = await fetchFromApi(
+      '/quest/get-user-quest-statistic',
       { questId: platformState.questId },
-      { headers: { Authorization: "Bearer " + userState.token } },
+      { Authorization: "Bearer " + userState.token }
     );
-    const responseData = response.data;
-    if (responseData.code != 0) {
-      throw new Error(`Error request with code ${responseData.code}`);
-    }
 
-    return responseData.data.questTaskStatistic.filter(
-      (quest) => quest.isFinished,
-    );
+    return responseData.data.questTaskStatistic.filter(quest => quest.isFinished);
   } catch (error) {
-    console.log(`Unable to get user quest statistic : ${error.message}`);
+    prettyLog(`Unable to get user quest statistic: ${error.message}`, 'error');
   }
 }
 
 export async function getCurrentQuests() {
   try {
-    const response = await axios.post(
-      `${persistentState.baseUrl}/quest/current-quest`,
+    const responseData = await fetchFromApi(
+      '/quest/current-quest',
       { withQuestTask: true, withStatistic: true },
-      { headers: { Authorization: "Bearer " + userState.token } },
+      { Authorization: "Bearer " + userState.token }
     );
 
-    const responseData = response.data
-    if (responseData.code != 0) {
-      throw new Error("Error request with code " + responseData.code)
-    }
+    platformState.questId = responseData.data.id;
 
-    platformState.questId = responseData.data.id
-
-    const quests = response.data.data.tasks.map((quest) => ({
+    return responseData.data.tasks.map(quest => ({
       id: quest.id,
       category: quest.category,
       name: quest.name,
     }));
-
-    return quests;
   } catch (error) {
-    console.log(`Unable to get current quests data : ${error.message}`);
+    prettyLog(`Unable to get current quests data: ${error.message}`, 'error');
   }
 }

@@ -1,6 +1,8 @@
 import axios from "axios";
 import { getAllCompletedQuests, getCurrentQuests } from "./getQuest.js";
 import { persistentState, platformState, userState } from "../state/index.js";
+import { logRequestTime } from "./fetch.js"; // Import the logRequestTime function
+import { prettyLog } from './log.js'; // Import prettyLog for logging
 
 export async function completeAllQuests() {
   try {
@@ -31,78 +33,80 @@ export async function completeAllQuests() {
         nonFollowTask.push(quest.category + " - " + quest.name);
       }
     }
-    console.log(`[-][${userState.twitterHandle}] Past completed quests : ${completedQuests.length}`);
-    console.log(`[-][${userState.twitterHandle}] New completed quests : ${platformState.claimedQuest.length}, claimed points : ${platformState.claimedPoints}`);
-    console.log(
+    prettyLog(`[-][${userState.twitterHandle}] Past completed quests : ${completedQuests.length}`);
+    prettyLog(`[-][${userState.twitterHandle}] New completed quests : ${platformState.claimedQuest.length}, claimed points : ${platformState.claimedPoints}`);
+    prettyLog(
       `[-][${userState.twitterHandle}] Detected ${nonFollowTask.length} non following tasks : \n + ${nonFollowTask.join("\n + ")}`,
     );
 
     if (platformState.unclaimableQuest.length) {
-      console.log(
+      prettyLog(
         `[-][${userState.twitterHandle}] Detected ${platformState.unclaimableQuest.length} unclaimable quests : `,
       );
       for (const [index, taskId] of platformState.unclaimableQuest.entries()) {
         const quest = mappedCurrentQuests[taskId]
         if (quest) {
-          console.log(` + ${quest.name}`)
+          prettyLog(` + ${quest.name}`)
         } else {
-          console.log(` + Quest unidentifiable`)
+          prettyLog(` + Quest unidentifiable`)
         }
       }
     }
   } catch (error) {
-    console.log(error);
+    prettyLog(error.message, 'error');
   }
 }
 
 export async function claimQuestFollow(taskId) {
   try {
-    const response = await axios.post(
+    const response = await logRequestTime(
       `${persistentState.baseUrl}/quest/claim-task-follow-twitter`,
+      'post',
       {
         questId: platformState.questId,
         taskId
       },
       {
-        headers: { Authorization: "Bearer " + userState.token },
-      },
+        Authorization: "Bearer " + userState.token
+      }
     );
     const responseData = response.data
     if (responseData.code != 0) {
-      console.log(`[-][${userState.twitterHandle}] Skipping unclaimable quests`)
+      prettyLog(`[-][${userState.twitterHandle}] Skipping unclaimable quests`)
       platformState.unclaimableQuest.push(taskId)
       return
     }
-    console.log(`[-][${userState.twitterHandle}] Added ${responseData.data.totalPoints} point`);
+    prettyLog(`[-][${userState.twitterHandle}] Added ${responseData.data.totalPoints} point`);
     platformState.claimedQuest.push(taskId)
     platformState.claimedPoints += responseData.data.totalPoints
   } catch (error) {
-    console.log("Unable to claim follow quest : " + error.message);
+    prettyLog("Unable to claim follow quest : " + error.message, 'error');
   }
 }
 
 export async function claimQuest(taskId) {
   try {
-    const response = await axios.post(
+    const response = await logRequestTime(
       `${persistentState.baseUrl}/quest/claim-quest-task`,
+      'post',
       {
         questId: platformState.questId,
         taskIds: [taskId]
       },
       {
-        headers: { Authorization: "Bearer " + userState.token },
-      },
+        Authorization: "Bearer " + userState.token
+      }
     );
     const responseData = response.data
     if (responseData.code != 0) {
-      console.log(`[-][${userState.twitterHandle}] Skipping unclaimable quests`)
+      prettyLog(`[-][${userState.twitterHandle}] Skipping unclaimable quests`)
       platformState.unclaimableQuest.push(taskId)
       return
     }
-    console.log(`[-][${userState.twitterHandle}] Added ${responseData.data.totalPoints} point`);
+    prettyLog(`[-][${userState.twitterHandle}] Added ${responseData.data.totalPoints} point`);
     platformState.claimedQuest.push(taskId)
     platformState.claimedPoints += responseData.data.totalPoints
   } catch (error) {
-    console.log("Unable to claim quest : " + error.message);
+    prettyLog("Unable to claim quest : " + error.message, 'error');
   }
 }

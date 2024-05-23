@@ -1,21 +1,19 @@
-import axios from "axios";
 import { persistentState, userState } from "../state/index.js";
+import { logRequestTime } from './fetch.js';
+import { prettyLog } from './log.js';
 
 export async function getProfile() {
+  const url = `${persistentState.baseUrl}/user/current-profile`;
   try {
-    const url =
-      `${persistentState.baseUrl}/user/current-profile`;
-    const response = await axios.post(
-      url,
-      {},
-      { headers: { Authorization: "Bearer " + userState.token } },
-    );
-    const responseData = response.data;
-    if (responseData.code != 0) {
-      throw new Error("Error request with code " + responseData.code);
+    const response = await logRequestTime(url, 'post', {}, {
+      Authorization: `Bearer ${userState.token}`
+    });
+    const { data } = response;
+    if (data.code !== 0) {
+      throw new Error(`Error request with code ${data.code}`);
     }
-    return responseData.data;
+    return data.data;
   } catch (error) {
-    console.log("Unable to get profile : " + error.message);
+    prettyLog(`Unable to get profile: ${error.message}`, 'error');
   }
 }
